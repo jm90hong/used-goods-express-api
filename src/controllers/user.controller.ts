@@ -1,0 +1,99 @@
+//user.controller.ts
+import { Request, Response } from 'express';
+import { PrismaClient } from '../generated/prisma/client';
+import bcrypt from 'bcrypt';
+
+const prisma = new PrismaClient();
+
+
+//bigint serializer 에러 바로 bigint 를 문자로 리턴 함수 세팅
+(BigInt.prototype as any).toJSON = function() {
+    return this.toString();
+};
+
+
+//회원 가입
+export const createUser = async (req: Request, res: Response) => {
+   try{
+
+    const { id, pw, nick, address1, address2, point=0 } = req.body;
+    
+
+    //유효성 검사
+    if(!id || !pw || !nick || !address1){
+        return res.status(400).json({
+            success: false,
+            message: '회원 가입 실패 유효성 검사 실패',
+            error: 'id, pw, nick, address1 필수 입력'
+        });
+    }
+
+
+    //id 중복 체크
+    const existingUser = await prisma.user.findUnique({
+        where: {
+            id: id
+        }
+    });
+    if(existingUser){
+        return res.status(400).json({
+            success: false,
+            message: '이미 가입된 아이디가 존재합니다.',
+            error: 'id 중복'
+        });
+    }
+
+
+    //nick 중복 체크
+    const existingNick = await prisma.user.findUnique({
+        where: {
+            nick: nick
+        }
+    });
+
+    if(existingNick){
+        return res.status(400).json({
+            success: false,
+            message: '이미 가입된 닉네임이 존재합니다.',
+            error: 'nick 중복'
+        });
+    }
+
+
+    //pw 암호화
+    const hashedPw = await bcrypt.hash(pw, 10);
+
+    const user = await prisma.user.create({
+        data: {
+            id, 
+            pw:hashedPw, 
+            nick, 
+            address1, 
+            address2, 
+            point, 
+            created_at: new Date()
+        }
+    });
+
+    res.status(200).json({
+        success: true,
+        message: '회원 가입 성공',
+        data: user
+    });
+
+   }catch(error){
+    console.error('내부 서버 에러(관리자에게 문의)', error);
+    res.status(500).json({
+        success: false,
+        message: '내부 서버 에러(관리자에게 문의)',
+        error: error
+    });
+   }
+};
+
+
+//회원 전체 조회
+export const getUsers = async (req: Request, res: Response) => {
+    const users = await prisma.user.findMany();
+    res.json(users);
+};
