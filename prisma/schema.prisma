@@ -19,6 +19,8 @@ model user {
   created_at DateTime       @db.DateTime(0)
   updated_at DateTime?      @db.DateTime(0)
   is_active  user_is_active @default(Y)
+  lat        Decimal?       @db.Decimal(10, 8)
+  lng        Decimal?       @db.Decimal(11, 0)
 }
 
 enum user_is_active {

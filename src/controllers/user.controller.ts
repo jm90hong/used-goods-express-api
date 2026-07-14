@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '../generated/prisma/client';
 import bcrypt from 'bcrypt';
+import axios from 'axios';
 
 const prisma = new PrismaClient();
 
@@ -63,15 +64,32 @@ export const createUser = async (req: Request, res: Response) => {
     //pw 암호화
     const hashedPw = await bcrypt.hash(pw, 10);
 
+
+    //kakao location 위도 경도 조회
+    const kakaoLocation = await axios.get(
+        `https://dapi.kakao.com/v2/local/search/address.json?query=${address1}`,
+        {
+            headers: {
+                Authorization: `KakaoAK f56155d970a622e8b173c4d82e9ca94e`
+            }
+        }
+    );
+    const latitude = kakaoLocation.data.documents[0].y; //위도
+    const longitude = kakaoLocation.data.documents[0].x; //경도
+
+   
+
     const user = await prisma.user.create({
         data: {
             id, 
             pw:hashedPw, 
             nick, 
-            address1, 
+            address1,
             address2, 
             point, 
-            created_at: new Date()
+            created_at: new Date(),
+            lat: Number(latitude),
+            lng: Number(longitude)
         }
     });
 
