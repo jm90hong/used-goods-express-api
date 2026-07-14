@@ -13,8 +13,76 @@ const prisma = new PrismaClient();
 };
 
 
+
+//로그인 (아이디, 비밀번호 확인)
+export const login = async (req: Request, res: Response) : Promise<Response> => {
+    try{
+        const { id, pw } = req.body;
+
+        //유효성 검사
+        if(!id || !pw){
+            return res.status(400).json({
+                success: false,
+                message: '아이디와 비밀번호를 입력해주세요.',
+                error: 'id, pw 필수 입력'
+            });
+        }
+
+        //id로 회원 조회
+        const user = await prisma.user.findUnique({
+            where: {
+                id: id
+            }
+        });
+        
+        if(!user){
+            return res.status(400).json({
+                success: false,
+                message: '존재하지 않는 아이디입니다.',
+                error: 'id 또는 pw 오류',
+                errorCode: 'id'
+            });
+        }
+
+        //비밀번호 확인
+        const isPasswordValid = await bcrypt.compare(pw, user.pw);
+        console.log(isPasswordValid);
+        if(!isPasswordValid){
+            return res.status(400).json({
+                success: false,
+                message: '비밀번호가 일치하지 않습니다.',
+                error: 'id 또는 pw 오류',
+                errorCode: 'pw'
+            });
+        }
+
+        
+        //user 에서 pw 제외 하고 리턴
+        const { pw: string, ...userWithoutPw } = user;
+        
+        return res.status(200).json({
+            success: true,
+            message: '로그인 성공',
+            data: userWithoutPw
+        });
+
+
+
+    }catch(error){
+        console.error('내부 서버 에러(관리자에게 문의)', error);
+        return res.status(500).json({
+            success: false,
+            message: '내부 서버 에러(관리자에게 문의)',
+            error: error
+        });
+    }
+};
+
+
+
+
 //회원 가입
-export const createUser = async (req: Request, res: Response) => {
+export const createUser = async (req: Request, res: Response) : Promise<Response> => {
    try{
 
     const { id, pw, nick, address1, address2, point=0 } = req.body;
@@ -93,7 +161,7 @@ export const createUser = async (req: Request, res: Response) => {
         }
     });
 
-    res.status(200).json({
+    return res.status(200).json({
         success: true,
         message: '회원 가입 성공',
         data: user
@@ -101,7 +169,7 @@ export const createUser = async (req: Request, res: Response) => {
 
    }catch(error){
     console.error('내부 서버 에러(관리자에게 문의)', error);
-    res.status(500).json({
+    return res.status(500).json({
         success: false,
         message: '내부 서버 에러(관리자에게 문의)',
         error: error
@@ -110,8 +178,10 @@ export const createUser = async (req: Request, res: Response) => {
 };
 
 
+
+
 //회원 전체 조회
-export const getUsers = async (req: Request, res: Response) => {
+export const getUsers = async (req: Request, res: Response) : Promise<Response> => {
     const users = await prisma.user.findMany();
-    res.json(users);
+    return res.json(users);
 };
