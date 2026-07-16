@@ -14,6 +14,43 @@ const prisma = new PrismaClient();
 
 
 
+//item 조회 pagination
+export const getItems = async (req: Request, res: Response) : Promise<Response> => {
+    try{
+        const {page=1, limit=10} = req.query;
+
+        console.log(page, limit);
+
+        //pagination 계산
+        const skip = (Number(page) - 1) * Number(limit);
+        const take = Number(limit);
+
+        const items = await prisma.item.findMany({
+            skip : skip,
+            take : take,
+            orderBy: {
+                created_at: 'desc',
+            },
+            include: {
+                user: true,
+            },
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: '상품 조회 완료',
+            data: items,
+        });
+    }catch(error){
+        console.error('내부 서버 에러(관리자에게 문의)', error);
+        return res.status(500).json({
+            success: false,
+            message: '내부 서버 에러(관리자에게 문의)',
+        });
+    }
+}
+
+
 //상품 등록 요청
 export const createItem = async (req: Request, res: Response) : Promise<Response> => {
     try{
