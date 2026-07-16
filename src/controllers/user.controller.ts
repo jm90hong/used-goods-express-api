@@ -45,8 +45,8 @@ export const login = async (req: Request, res: Response) : Promise<Response> => 
         }
 
         //비밀번호 확인
-        const isPasswordValid = await bcrypt.compare(pw, user.pw);
-        console.log(isPasswordValid);
+        const isPasswordValid = await bcrypt.compare(pw, user.pw as string);
+        
         if(!isPasswordValid){
             return res.status(400).json({
                 success: false,

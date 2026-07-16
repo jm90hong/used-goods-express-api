@@ -1,0 +1,77 @@
+//item.controller.ts
+import { Request, Response } from 'express';
+import { PrismaClient } from '../generated/prisma/client';
+import bcrypt from 'bcrypt';
+import axios from 'axios';
+
+const prisma = new PrismaClient();
+
+
+//bigint serializer 에러 바로 bigint 를 문자로 리턴 함수 세팅
+(BigInt.prototype as any).toJSON = function() {
+    return this.toString();
+};
+
+
+
+//상품 등록 요청
+export const createItem = async (req: Request, res: Response) : Promise<Response> => {
+    try{
+        const {user_idx, item_img_url, name, price, description } = req.body;
+
+
+        //유효성 검사
+        if(!user_idx || !item_img_url || !name || !price || !description){
+            return res.status(400).json({
+                success: false,
+                message: '필수 입력 항목이 누락되었습니다.',
+            });
+        }
+
+        //user_idx 가 존재하는지 확인
+        const user = await prisma.user.findUnique({
+            where: {
+                idx: user_idx,
+            },
+        });
+        
+        if(!user){
+            return res.status(400).json({
+                success: false,
+                message: '존재하지 않는 사용자입니다.',
+            });
+        }
+
+
+        //상품 등록
+        const item = await prisma.item.create({
+            data: {
+                img_url: item_img_url,
+                name,
+                price,
+                description,
+                created_at: new Date(),
+
+                //외래키는 connect 로 insert
+                user: {
+                    connect: {
+                        idx: user_idx,
+                    },
+                },
+            },
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: '상품 등록 완료',
+            data: item,
+        })
+
+    }catch(error){
+        console.error('내부 서버 에러(관리자에게 문의)', error);
+        return res.status(500).json({
+            success: false,
+            message: '내부 서버 에러(관리자에게 문의)',
+        });
+    }
+}

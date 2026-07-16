@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import userRoutes from './routes/user.route';
+import itemRoutes from './routes/item.route';
 import cors from 'cors';
 
 const app = express();
@@ -14,6 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 
 //라우터 등록
 app.use('/api/user', userRoutes);
+app.use('/api/item', itemRoutes);
 
 
 

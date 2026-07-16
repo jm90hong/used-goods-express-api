@@ -9,21 +9,68 @@ datasource db {
 }
 
 model user {
-  idx        BigInt         @id @default(autoincrement())
-  id         String         @unique(map: "id") @db.VarChar(400)
-  pw         String         @db.VarChar(200)
-  nick       String         @unique(map: "nick") @db.VarChar(100)
-  address1   String         @db.VarChar(300)
-  address2   String?        @db.VarChar(300)
-  point      Int
-  created_at DateTime       @db.DateTime(0)
-  updated_at DateTime?      @db.DateTime(0)
-  is_active  user_is_active @default(Y)
-  lat        Decimal?       @db.Decimal(10, 8)
-  lng        Decimal?       @db.Decimal(11, 0)
+  idx          BigInt         @id @default(autoincrement())
+  id           String         @unique(map: "id") @db.VarChar(400)
+  pw           String?        @db.VarChar(200)
+  nick         String         @unique(map: "nick") @db.VarChar(100)
+  address1     String         @db.VarChar(300)
+  address2     String?        @db.VarChar(300)
+  point        Int            @default(0)
+  created_at   DateTime       @db.DateTime(0)
+  updated_at   DateTime?      @db.DateTime(0)
+  is_active    user_is_active @default(Y)
+  lat          Decimal?       @db.Decimal(10, 8)
+  lng          Decimal?       @db.Decimal(11, 8)
+  item         item[]
+  point_refund point_refund[]
+}
+
+model item {
+  idx         BigInt         @id @default(autoincrement())
+  user_idx    BigInt
+  img_url     String         @db.VarChar(1300)
+  name        String         @db.VarChar(150)
+  price       Int
+  description String         @db.Text
+  created_at  DateTime       @db.DateTime(0)
+  updated_at  DateTime?      @db.DateTime(0)
+  is_active   item_is_active @default(Y)
+  user        user           @relation(fields: [user_idx], references: [idx], onDelete: Cascade, map: "FK_item_user")
+
+  @@index([user_idx], map: "FK_item_user")
+}
+
+model point_refund {
+  idx            BigInt              @id @default(autoincrement())
+  user_idx       BigInt
+  point          Int
+  amount         Int
+  bank_name      String              @db.VarChar(50)
+  account_number String              @db.VarChar(50)
+  account_holder String              @db.VarChar(50)
+  status         point_refund_status @default(pending)
+  created_at     DateTime            @db.DateTime(0)
+  updated_at     DateTime?           @db.DateTime(0)
+  completed_at   DateTime?           @db.DateTime(0)
+  admin_note     String?             @db.VarChar(500)
+  user           user                @relation(fields: [user_idx], references: [idx])
+
+  @@index([status])
+  @@index([user_idx])
 }
 
 enum user_is_active {
+  Y
+  N
+}
+
+enum point_refund_status {
+  pending
+  completed
+  rejected
+}
+
+enum item_is_active {
   Y
   N
 }
