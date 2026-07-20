@@ -12,6 +12,36 @@ const prisma = new PrismaClient();
     return this.toString();
 };
 
+//idx로 상품 조회
+export const getItemByIdx = async (req: Request, res: Response) : Promise<Response> => {
+    try{
+        const {idx} = req.params;
+
+        const item = await prisma.item.findUnique({
+            where: {
+                idx: Number(idx),
+            },
+            include: {
+                user: true,
+            },
+        });
+        
+        return res.status(200).json({
+            success: true,
+            message: '상품 조회 완료',
+            data: item,
+        });
+    }
+    catch(error){
+        console.error('내부 서버 에러(관리자에게 문의)', error);
+        return res.status(500).json({
+            success: false,
+            message: '내부 서버 에러(관리자에게 문의)',
+        });
+    }
+}
+
+
 
 
 //item 조회 pagination

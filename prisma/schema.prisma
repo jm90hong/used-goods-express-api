@@ -22,6 +22,7 @@ model user {
   lat          Decimal?       @db.Decimal(10, 8)
   lng          Decimal?       @db.Decimal(11, 8)
   item         item[]
+  payment      payment[]
   point_refund point_refund[]
 }
 
@@ -36,6 +37,7 @@ model item {
   updated_at  DateTime?      @db.DateTime(0)
   is_active   item_is_active @default(Y)
   user        user           @relation(fields: [user_idx], references: [idx], onDelete: Cascade, map: "FK_item_user")
+  payment     payment[]
 
   @@index([user_idx], map: "FK_item_user")
 }
@@ -57,6 +59,18 @@ model point_refund {
 
   @@index([status])
   @@index([user_idx])
+}
+
+model payment {
+  idx        BigInt   @id @default(autoincrement())
+  user_idx   BigInt
+  item_idx   BigInt
+  created_at DateTime @db.DateTime(0)
+  item       item     @relation(fields: [item_idx], references: [idx], onDelete: Cascade, map: "FK2_payment_item")
+  user       user     @relation(fields: [user_idx], references: [idx], onDelete: Cascade, map: "FK_payment_user")
+
+  @@index([item_idx], map: "FK2_payment_item")
+  @@index([user_idx], map: "FK_payment_user")
 }
 
 enum user_is_active {
