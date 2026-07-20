@@ -17,10 +17,17 @@ const prisma = new PrismaClient();
 //item 조회 pagination
 export const getItems = async (req: Request, res: Response) : Promise<Response> => {
     try{
-        const {page=1, limit=10} = req.query;
+        const {page=1, limit=10, search_word='', order='desc' as 'asc' | 'desc' } = req.query;
 
-        console.log(page, limit);
 
+        var whereCondition: any = {};
+
+        if(search_word != ''){
+            whereCondition.name = {
+                contains: search_word as string,
+            };
+        }
+        
         //pagination 계산
         const skip = (Number(page) - 1) * Number(limit);
         const take = Number(limit);
@@ -29,8 +36,9 @@ export const getItems = async (req: Request, res: Response) : Promise<Response> 
             skip : skip,
             take : take,
             orderBy: {
-                created_at: 'desc',
+                idx: order as 'asc' | 'desc',
             },
+            where: whereCondition,
             include: {
                 user: true,
             },
