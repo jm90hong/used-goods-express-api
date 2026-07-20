@@ -18,6 +18,52 @@ export const createPayment = async (req: Request, res: Response) : Promise<Respo
     try{
         const {user_idx, item_idx} = req.body;
 
+        //user_idx 가 존재하는지 확인
+        const user = await prisma.user.findUnique({
+            where: {
+                idx: Number(user_idx),
+            },
+        });
+        if(!user){
+            return res.status(400).json({
+                success: false,
+                message: '사용자가 존재하지 않습니다.',
+            });
+        }
+
+        //item_idx 가 존재하는지 확인
+        const item = await prisma.item.findUnique({
+            where: {
+                idx: Number(item_idx),
+            },
+        });
+        if(!item){
+            return res.status(400).json({
+                success: false,
+                message: '상품이 존재하지 않습니다.',
+            });
+        }
+
+        //회원 point가 상품 price보다 적은지 확인
+        if(user.point < item.price){
+            return res.status(400).json({
+                success: false,
+                message: '회원 point가 상품 price보다 적습니다.',
+            });
+        }
+
+
+        //회원 point 차감
+        await prisma.user.update({
+            where: {
+                idx: Number(user_idx),
+            },
+            data: {
+                point: user.point - item.price,
+            },
+        });
+
+        //결제 요청 payment 생성
         const payment = await prisma.payment.create({
             data: {
                 created_at: new Date(),
@@ -32,7 +78,6 @@ export const createPayment = async (req: Request, res: Response) : Promise<Respo
                     },
                 },
             },
-            
         });
 
 
