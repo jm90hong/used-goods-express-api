@@ -18,7 +18,7 @@ export const createPayment = async (req: Request, res: Response) : Promise<Respo
     try{
         const {user_idx, item_idx} = req.body;
 
-        const payment = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx) => {
             //user_idx 가 존재하는지 확인
             const user = await tx.user.findUnique({
                 where: {
@@ -45,7 +45,7 @@ export const createPayment = async (req: Request, res: Response) : Promise<Respo
             }
 
             //회원 point 차감
-            await tx.user.update({
+            const updatedUser = await tx.user.update({
                 where: {
                     idx: Number(user_idx),
                 },
@@ -55,7 +55,7 @@ export const createPayment = async (req: Request, res: Response) : Promise<Respo
             });
 
             //결제 요청 payment 생성
-            return tx.payment.create({
+            const payment = await tx.payment.create({
                 data: {
                     created_at: new Date(),
                     user: {
@@ -70,12 +70,18 @@ export const createPayment = async (req: Request, res: Response) : Promise<Respo
                     },
                 },
             });
+
+            return {
+                remaining_point: updatedUser.point,
+                payment: payment,
+            };
         });
 
         return res.status(200).json({
             success: true,
             message: '결제 요청 완료',
-            data: payment,
+            data: result,
+            
         });
     }
     catch(error){
