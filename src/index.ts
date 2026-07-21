@@ -3,6 +3,7 @@ import express, { Request, Response } from 'express';
 import userRoutes from './routes/user.route';
 import itemRoutes from './routes/item.route';
 import paymentRoutes from './routes/payment.route';
+import tossRoutes from './routes/toss.route';
 import cors from 'cors';
 
 const app = express();
@@ -18,7 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/user', userRoutes);
 app.use('/api/item', itemRoutes);
 app.use('/api/payment', paymentRoutes);
-
+app.use('/api/toss', tossRoutes);
 
 
 app.get('/health', (req: Request, res: Response) => {
