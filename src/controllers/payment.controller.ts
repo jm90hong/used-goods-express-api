@@ -58,6 +58,9 @@ export const createPayment = async (req: Request, res: Response) : Promise<Respo
             const payment = await tx.payment.create({
                 data: {
                     created_at: new Date(),
+                    order_id: '',
+                    provider: 'TOSS',
+                    method: 'CARD',
                     user: {
                         connect: {
                             idx: Number(user_idx),

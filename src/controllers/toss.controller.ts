@@ -7,13 +7,13 @@ const prisma = new PrismaClient();
 
 
 export const createTossPayment = async (req: Request, res: Response) : Promise<Response> => {
-    const { paymentKey, orderId, amount } = req.body;
+    const { paymentKey, orderId, amount, user_idx, item_idx, method, provider} = req.body;
 
     // 필수 파라미터 누락 검증
-    if (!paymentKey || !orderId || !amount) {
+    if (!paymentKey || !orderId || !amount || !user_idx || !item_idx || !method || !provider) {
       return res.status(400).json({
         success: false,
-        message: '필수 파라미터(paymentKey, orderId, amount)가 누락되었습니다.',
+        message: '필수 파라미터(paymentKey, orderId, amount, user_idx, item_idx, method, provider, order_id)가 누락되었습니다.',
       });
     }
   
@@ -52,11 +52,75 @@ export const createTossPayment = async (req: Request, res: Response) : Promise<R
        * 결제 승인 정보를 데이터베이스에 저장합니다.
        * await savePaymentResult(orderId, paymentData);
        */
+
+
+      const result = await prisma.$transaction(async (tx) => {
+            //user_idx 가 존재하는지 확인
+            const user = await tx.user.findUnique({
+                where: {
+                    idx: Number(user_idx),
+                },
+            });
+            if(!user){
+                throw new Error('사용자가 존재하지 않습니다.');
+            }
+
+            //item_idx 가 존재하는지 확인
+            const item = await tx.item.findUnique({
+                where: {
+                    idx: Number(item_idx),
+                },
+            });
+            if(!item){
+                throw new Error('상품이 존재하지 않습니다.');
+            }
+
+            //회원 point가 상품 price보다 적은지 확인
+            if(user.point < item.price){
+                throw new Error('회원 point가 상품 price보다 적습니다.');
+            }
+
+            //회원 point 차감
+            const updatedUser = await tx.user.update({
+                where: {
+                    idx: Number(user_idx),
+                },
+                data: {
+                    point: user.point - Number(amount),
+                },
+            });
+
+            //결제 요청 payment 생성
+            const payment = await tx.payment.create({
+                data: {
+                    created_at: new Date(),
+                    order_id: orderId,
+                    provider: provider,
+                    method: method,
+                    user: {
+                        connect: {
+                            idx: Number(user_idx),
+                        },
+                    },
+                    item: {
+                        connect: {
+                            idx: Number(item_idx),
+                        },
+                    },
+                },
+            });
+
+            return {
+                remaining_point: updatedUser.point,
+                payment: payment,
+            };
+        });
   
       // 3. 성공 응답 반환
       return res.status(200).json({
         success: true,
-        data: paymentData,
+        data_from_toss: paymentData,
+        data:result,
       });
     } catch (error: any) {
       console.error('결제 승인 오류:', error.response?.data || error.message);

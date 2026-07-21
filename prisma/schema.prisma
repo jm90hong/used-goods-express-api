@@ -62,12 +62,15 @@ model point_refund {
 }
 
 model payment {
-  idx        BigInt   @id @default(autoincrement())
+  idx        BigInt           @id @default(autoincrement())
   user_idx   BigInt
   item_idx   BigInt
-  created_at DateTime @db.DateTime(0)
-  item       item     @relation(fields: [item_idx], references: [idx], onDelete: Cascade, map: "FK2_payment_item")
-  user       user     @relation(fields: [user_idx], references: [idx], onDelete: Cascade, map: "FK_payment_user")
+  created_at DateTime         @db.DateTime(0)
+  order_id   String           @db.VarChar(50)
+  provider   payment_provider
+  method     payment_method
+  item       item             @relation(fields: [item_idx], references: [idx], onDelete: Cascade, map: "FK2_payment_item")
+  user       user             @relation(fields: [user_idx], references: [idx], onDelete: Cascade, map: "FK_payment_user")
 
   @@index([item_idx], map: "FK2_payment_item")
   @@index([user_idx], map: "FK_payment_user")
@@ -87,4 +90,15 @@ enum point_refund_status {
 enum item_is_active {
   Y
   N
+}
+
+enum payment_provider {
+  TOSS
+  KAKAO
+}
+
+enum payment_method {
+  CARD
+  BANK
+  MOBILE
 }
